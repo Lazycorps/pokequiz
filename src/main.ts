@@ -1,7 +1,17 @@
-import { createApp } from "vue";
-import App from "./App.vue";
-import "./registerServiceWorker";
-import router from "./router";
-import store from "./store";
+import Vue from 'vue';
+import './plugins/axios'
+import App from './App.vue';
+import './registerServiceWorker';
+import router from './router';
+import store from './store';
+import vuetify from './plugins/vuetify'
+import VueCompositionAPI from "@vue/composition-api";
 
-createApp(App).use(store).use(router).mount("#app");
+Vue.config.productionTip = false;
+Vue.use(VueCompositionAPI);
+new Vue({
+  router,
+  store,
+  vuetify,
+  render: (h) => h(App)
+}).$mount('#app');
