@@ -1,35 +1,65 @@
 <template>
   <v-container class="ma-5" fluid>
     <v-row class="align-center" justify="center">
-      <v-card class="mx-auto my-12">
-        <v-row class="align-center" justify="center">
-          <v-col>
-            <v-card class="mx-auto my-12" elevation="0">
-              <v-img
-                :src="currentImg"
-                style="height: 200px; max-width: 200px"
-              />
-              <v-card-title class="justify-center">{{
-                currentType.frName
-              }}</v-card-title>
-            </v-card>
-          </v-col>
-          <v-col>
-            <v-img
-              src="http://localhost:8080/img/vs.png"
-              height="100"
-              contain
-            />
-          </v-col>
-          <v-col>
-            <v-card class="mx-auto my-12" elevation="0">
-              <v-img :src="versusImg" style="height: 200px; max-width: 200px" />
-              <v-card-title class="justify-center"
-                ><div>{{ versusType.frName }}</div></v-card-title
-              >
-            </v-card>
-          </v-col>
-        </v-row>
+      <v-card class="my-5" elevation="2" outlined>
+        <v-card-text>
+          <v-row class="align-center">
+            <span class="dotGreen ma-2"
+              ><div class="center">{{ goodResponse }}</div></span
+            >
+            <span class="dotRed ma-2"
+              ><div class="center">{{ badResponse }}</div></span
+            >
+            <v-progress-circular
+              color="blue"
+              :value="((goodResponse + badResponse) / 20) * 100"
+              :buffer-value="questionCount"
+              class="ma-2"
+              size="60"
+              width="6"
+            >
+              <div style="color:black; font-weight: bolder;">
+                {{ badResponse + goodResponse }} / {{ questionCount }}
+              </div>
+            </v-progress-circular>
+            <div style="color:black; font-weight: bolder;">
+              Score : {{ totalScore }}, Best : {{ bestScore }}
+            </div>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </v-row>
+    <v-row class="align-center" justify="center">
+      <v-card class="mx-auto" elevation="2" outlined v-show="!finish">
+        <v-card-text>
+          <v-row class="align-center" justify="center">
+            <v-col>
+              <v-card class="mx-auto my-12" elevation="0">
+                <v-img
+                  :src="currentImg"
+                  style="height: 200px; max-width: 200px"
+                />
+                <v-card-title class="justify-center">{{
+                  currentType.frName
+                }}</v-card-title>
+              </v-card>
+            </v-col>
+            <v-col>
+              <v-img src="/img/vs.png" height="100" contain />
+            </v-col>
+            <v-col>
+              <v-card class="mx-auto my-12" elevation="0">
+                <v-img
+                  :src="versusImg"
+                  style="height: 200px; max-width: 200px"
+                />
+                <v-card-title class="justify-center"
+                  ><div>{{ versusType.frName }}</div></v-card-title
+                >
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-card-text>
         <v-card-actions class="justify-center">
           <v-btn
             color="black"
@@ -64,37 +94,21 @@
           <v-progress-linear
             color="blue"
             class="ma-2"
+            :indeterminate="!running"
             :value="timeCountDown"
             :buffer-value="100"
             height="12"
+            striped
+            rounded
             ><div style="color:black; font-weight: bolder;">
               <!-- {{ timeCountDown }} -->
             </div>
           </v-progress-linear>
         </v-card-actions>
       </v-card>
-    </v-row>
-    <v-row class="align-center">
-      <span class="dotGreen ma-2"
-        ><div class="center">{{ goodResponse }}</div></span
-      >
-      <span class="dotRed ma-2"
-        ><div class="center">{{ badResponse }}</div></span
-      >
-      <v-progress-linear
-        color="blue"
-        :value="((goodResponse + badResponse) / 20) * 100"
-        :buffer-value="questionCount"
-        class="ma-2"
-      />
-      <div style="color:black; font-weight: bolder;">
-        {{ badResponse + goodResponse }} / {{ questionCount }}
-      </div>
-    </v-row>
-    <v-row class="align-center">
-      <div>
-        {{ totalScore }}
-      </div>
+      <v-card class="mx-auto" elevation="2" outlined v-show="finish">
+        <v-btn color="success" @click="startGame()">START</v-btn>
+      </v-card>
     </v-row>
   </v-container>
 </template>
@@ -119,41 +133,38 @@ export default defineComponent({
     const time = ref(0);
     const timeCountDown = ref(maxTimer);
     const totalScore = ref(0);
+    const activeProgress = ref(false);
+    const running = ref(false);
+    const finish = ref(true);
+    const bestScore = ref(0);
 
-    onMounted(() => {
+    function startGame() {
+      goodResponse.value = 0;
+      badResponse.value = 0;
+      totalScore.value = 0;
+      finish.value = false;
       generateQuestion();
-    });
+    }
 
     function generateQuestion() {
       const random1 = Math.floor(Math.random() * 18) + 1;
       let random2 = Math.floor(Math.random() * 18) + 1;
 
-      axios
-        .get<PokemonTypeDTO>(`https://pokeapi.co/api/v2/type/${random1}`)
-        .then((resp) => {
-          currentType.value = new PokemonType(resp.data);
-          currentImg.value = `http://localhost:8080/img/typeIcons/${resp.data.name}.png`;
-        });
+      Promise.all([
+        axios.get<PokemonTypeDTO>(`https://pokeapi.co/api/v2/type/${random1}`),
+        axios.get<PokemonType>(`https://pokeapi.co/api/v2/type/${random2}`),
+      ]).then((resp) => {
+        currentType.value = new PokemonType(resp[0].data);
+        currentImg.value = `/img/typeIcons/${resp[0].data.name}.png`;
+        versusType.value = new PokemonType(resp[1].data);
+        versusImg.value = `/img/typeIcons/${resp[1].data.name}.png`;
 
-      axios
-        .get<PokemonType>(`https://pokeapi.co/api/v2/type/${random2}`)
-        .then((resp) => {
-          versusType.value = new PokemonType(resp.data);
-          versusImg.value = `http://localhost:8080/img/typeIcons/${resp.data.name}.png`;
-        });
-
-      start();
+        start();
+      });
     }
 
     function checkResponse(value: string) {
-      const elapsedTimes = getElapsedTime();
-      if (elapsedTimes.getTime() < 500) totalScore.value += 10;
-      else {
-        totalScore.value += round((10 - elapsedTimes.getTime()) / 1000, 2);
-      }
-
       stop();
-      reset();
       if (
         (value == "0" &&
           currentType.value.damage_relations.no_damage_to.some(
@@ -178,59 +189,64 @@ export default defineComponent({
             (t) => t.name == versusType.value.name
           ))
       ) {
+        const elapsedTimes = getElapsedTime();
+        const timeMin = 2000;
+        const timeMax = 5000;
+
+        if (elapsedTimes < timeMin) totalScore.value += 5;
+        else if (elapsedTimes < timeMax) {
+          totalScore.value = +(
+            totalScore.value +
+            5 - (elapsedTimes - timeMin) / 1000
+          ).toFixed(2);
+        }
         goodResponse.value++;
       } else {
         badResponse.value++;
       }
-      generateQuestion();
+
+      resetTimer();
+      if (badResponse.value + goodResponse.value === questionCount.value){
+        finish.value = true;
+
+        if(totalScore.value > bestScore.value) 
+          bestScore.value = totalScore.value;
+      }
+      else generateQuestion();
     }
 
-    function round(value: number, precision: number) {
-      var multiplier = Math.pow(10, precision || 0);
-      return Math.round(value * multiplier) / multiplier;
-    }
-
-    var timeBegan: any = null,
-      timeStopped: any = null,
-      stoppedDuration = 0,
-      started: any = null,
-      running = false;
+    let timeBegan: Date | null = null;
+    let started: any = null;
 
     function start() {
-      if (running) return;
-
       if (timeBegan === null) {
-        reset();
+        resetTimer();
         timeBegan = new Date();
       }
 
-      if (timeStopped !== null) {
-        stoppedDuration += new Date().getTime() - timeStopped;
-      }
-
       started = setInterval(clockRunning, 50);
-      running = true;
+      running.value = true;
     }
 
     function stop() {
-      running = false;
-      timeStopped = new Date();
+      running.value = false;
       clearInterval(started);
     }
 
-    function reset() {
-      running = false;
+    function resetTimer() {
+      running.value = false;
       clearInterval(started);
-      stoppedDuration = 0;
       timeBegan = null;
-      timeStopped = null;
-      time.value = 5000;
+      time.value = 0;
+      timeCountDown.value = 5000;
     }
 
     function clockRunning() {
       const timeElapsed = getElapsedTime();
-      timeCountDown.value = Math.round((maxTimer - timeElapsed.getTime()) / maxTimer * 100);
-      time.value = timeElapsed.getUTCSeconds();
+      timeCountDown.value = Math.round(
+        ((maxTimer - timeElapsed) / maxTimer) * 100
+      );
+      time.value = timeElapsed * 1000;
       if (timeCountDown.value <= 0) {
         stop();
       }
@@ -238,11 +254,13 @@ export default defineComponent({
 
     function getElapsedTime() {
       const currentTime = new Date();
-      return new Date(currentTime.getTime() - timeBegan - stoppedDuration);
+      if (!timeBegan) return 0;
+      else return currentTime.getTime() - timeBegan.getTime();
     }
 
     return {
       title,
+      startGame,
       checkResponse,
       currentType,
       versusType,
@@ -255,6 +273,10 @@ export default defineComponent({
       timeCountDown,
       time,
       totalScore,
+      activeProgress,
+      running,
+      finish,
+      bestScore
     };
   },
 });
@@ -262,8 +284,8 @@ export default defineComponent({
 
 <style lang="scss">
 .dot {
-  height: 50px;
-  width: 50px;
+  height: 60px;
+  width: 60px;
   border-radius: 50%;
   position: relative;
   display: inline-block;
