@@ -8,7 +8,7 @@
       <div class="d-flex align-center">
         <v-img
           alt="Pokéquiz name"
-          class="shrink mt-1 hidden-sm-and-down"
+          class="shrink mt-1"
           contain
           min-width="150"
           src="https://fontmeme.com/permalink/210620/8251cb4f510c20821e42d8ea683727ae.png"

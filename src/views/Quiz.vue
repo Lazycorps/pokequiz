@@ -1,5 +1,5 @@
 <template>
-  <v-container class="ma-5" fluid>
+  <v-container class="my-5" fluid>
     <v-row class="align-center" justify="center">
       <v-card class="my-5" elevation="2" outlined>
         <v-card-text>
@@ -18,12 +18,13 @@
               size="60"
               width="6"
             >
-              <div style="color:black; font-weight: bolder;">
-                {{ badResponse + goodResponse }} / {{ questionCount }}
-              </div>
+            <div style="color:black; font-weight: bolder;">
+              {{ badResponse + goodResponse }} / {{ questionCount }}
+            </div>
             </v-progress-circular>
             <div style="color:black; font-weight: bolder;">
-              Score : {{ totalScore }}, Best : {{ bestScore }}
+              <div>Score : {{ totalScore }}</div>
+              <div>Best : {{ bestScore }}</div>
             </div>
           </v-row>
         </v-card-text>
@@ -33,25 +34,25 @@
       <v-card class="mx-auto" elevation="2" outlined v-show="!finish">
         <v-card-text>
           <v-row class="align-center" justify="center">
-            <v-col>
-              <v-card class="mx-auto my-12" elevation="0">
+            <v-col cols="5">
+              <v-card elevation="0">
                 <v-img
                   :src="currentImg"
-                  style="height: 200px; max-width: 200px"
+                  style="max-height: 200px; max-width: 200px"
                 />
                 <v-card-title class="justify-center">{{
                   currentType.frName
                 }}</v-card-title>
               </v-card>
             </v-col>
-            <v-col>
-              <v-img src="/img/vs.png" height="100" contain />
+            <v-col cols="2">
+              <v-img src="/img/vs.png" style="max-height: 100px" contain />
             </v-col>
-            <v-col>
-              <v-card class="mx-auto my-12" elevation="0">
+            <v-col cols="5">
+              <v-card elevation="0">
                 <v-img
                   :src="versusImg"
-                  style="height: 200px; max-width: 200px"
+                  style="max-height: 200px; max-width: 200px"
                 />
                 <v-card-title class="justify-center"
                   ><div>{{ versusType.frName }}</div></v-card-title
@@ -61,34 +62,48 @@
           </v-row>
         </v-card-text>
         <v-card-actions class="justify-center">
-          <v-btn
-            color="black"
-            class="ma-3 white--text"
-            large
-            @click="checkResponse('0')"
-            >0</v-btn
-          >
-          <v-btn
-            color="red"
-            class="ma-3 white--text"
-            large
-            @click="checkResponse('/2')"
-            >0.5x</v-btn
-          >
-          <v-btn
-            color="grey"
-            class="ma-3 white--text"
-            large
-            @click="checkResponse('x1')"
-            >1x</v-btn
-          >
-          <v-btn
-            color="green"
-            class="ma-3 white--text"
-            large
-            @click="checkResponse('x2')"
-            >2x</v-btn
-          >
+          <v-row>
+            <v-col cols="6" md="3">
+              <v-btn
+                color="black"
+                class="white--text"
+                large
+                block
+                @click="checkResponse('0')"
+                >0</v-btn
+              >
+            </v-col>
+            <v-col cols="6" md="3">
+              <v-btn
+                color="red"
+                class="white--text"
+                large
+                block
+                @click="checkResponse('/2')"
+                >0.5x</v-btn
+              >
+            </v-col>
+            <v-col cols="6"  md="3">
+              <v-btn
+                color="grey"
+                class="white--text"
+                large
+                block
+                @click="checkResponse('x1')"
+                >1x</v-btn
+              >
+            </v-col>
+            <v-col cols="6" md="3">
+              <v-btn
+                color="green"
+                class="white--text"
+                large
+                block
+                @click="checkResponse('x2')"
+                >2x</v-btn
+              >
+            </v-col>
+          </v-row>
         </v-card-actions>
         <v-card-actions class="justify-center">
           <v-progress-linear
@@ -197,7 +212,8 @@ export default defineComponent({
         else if (elapsedTimes < timeMax) {
           totalScore.value = +(
             totalScore.value +
-            5 - (elapsedTimes - timeMin) / 1000
+            5 -
+            (elapsedTimes - timeMin) / 1000
           ).toFixed(2);
         }
         goodResponse.value++;
@@ -206,13 +222,12 @@ export default defineComponent({
       }
 
       resetTimer();
-      if (badResponse.value + goodResponse.value === questionCount.value){
+      if (badResponse.value + goodResponse.value === questionCount.value) {
         finish.value = true;
 
-        if(totalScore.value > bestScore.value) 
+        if (totalScore.value > bestScore.value)
           bestScore.value = totalScore.value;
-      }
-      else generateQuestion();
+      } else generateQuestion();
     }
 
     let timeBegan: Date | null = null;
@@ -276,7 +291,7 @@ export default defineComponent({
       activeProgress,
       running,
       finish,
-      bestScore
+      bestScore,
     };
   },
 });
