@@ -18,9 +18,9 @@
               size="60"
               width="6"
             >
-            <div style="color:black; font-weight: bolder;">
-              {{ badResponse + goodResponse }} / {{ questionCount }}
-            </div>
+              <div style="color:black; font-weight: bolder;">
+                {{ badResponse + goodResponse }} / {{ questionCount }}
+              </div>
             </v-progress-circular>
             <div style="color:black; font-weight: bolder;">
               <div>Score : {{ totalScore }}</div>
@@ -69,6 +69,8 @@
                 class="white--text"
                 large
                 block
+                rounded
+                elevation="0"
                 @click="checkResponse('0')"
                 >0</v-btn
               >
@@ -79,17 +81,21 @@
                 class="white--text"
                 large
                 block
+                rounded
                 @click="checkResponse('/2')"
+                elevation="0"
                 >0.5x</v-btn
               >
             </v-col>
-            <v-col cols="6"  md="3">
+            <v-col cols="6" md="3">
               <v-btn
                 color="grey"
                 class="white--text"
                 large
                 block
+                rounded
                 @click="checkResponse('x1')"
+                elevation="0"
                 >1x</v-btn
               >
             </v-col>
@@ -99,7 +105,9 @@
                 class="white--text"
                 large
                 block
+                rounded
                 @click="checkResponse('x2')"
+                elevation="0"
                 >2x</v-btn
               >
             </v-col>
@@ -121,8 +129,27 @@
           </v-progress-linear>
         </v-card-actions>
       </v-card>
-      <v-card class="mx-auto" elevation="2" outlined v-show="finish">
+      <v-card class="mx-auto" elevation="0" outlined v-if="finish">
         <v-btn color="success" @click="startGame()">START</v-btn>
+      </v-card>
+      <!-- <v-card class="mx-auto" elevation="0" outlined>
+        <v-list three-line>
+          <template v-for="(item, index) in responses">
+            <response-card :response="item" :key="index"/>
+          </template>
+        </v-list>
+      </v-card> -->
+    </v-row>
+    <v-row class="align-center" justify="center" v-if="finish">
+      <v-card class="mx-auto" elevation="0" outlined>
+        <v-list class="">
+          <template v-for="(item, index) in responses">
+            <div :key="index">
+              <response-card :response="item" />
+              <v-divider></v-divider>
+            </div>
+          </template>
+        </v-list>
       </v-card>
     </v-row>
   </v-container>
@@ -132,8 +159,11 @@
 import { ref, onMounted, defineComponent } from "@vue/composition-api";
 import axios from "axios";
 import { PokemonType, PokemonTypeDTO } from "../models/PokemonType";
+import { TypeResponse } from "../models/TypeResponse";
+import ResponseCard from "./ResponseCard.vue";
 
 export default defineComponent({
+  components: { ResponseCard },
   setup() {
     const title = "Quiz !";
     const maxTimer = 5000;
@@ -152,12 +182,14 @@ export default defineComponent({
     const running = ref(false);
     const finish = ref(true);
     const bestScore = ref(0);
+    const responses = ref<TypeResponse[]>([]);
 
     function startGame() {
       goodResponse.value = 0;
       badResponse.value = 0;
       totalScore.value = 0;
       finish.value = false;
+      responses.value = [];
       generateQuestion();
     }
 
@@ -180,47 +212,31 @@ export default defineComponent({
 
     function checkResponse(value: string) {
       stop();
-      if (
-        (value == "0" &&
-          currentType.value.damage_relations.no_damage_to.some(
-            (t) => t.name == versusType.value.name
-          )) ||
-        (value == "/2" &&
-          currentType.value.damage_relations.half_damage_to.some(
-            (t) => t.name == versusType.value.name
-          )) ||
-        (value == "x2" &&
-          currentType.value.damage_relations.double_damage_to.some(
-            (t) => t.name == versusType.value.name
-          )) ||
-        (value == "x1" &&
-          !currentType.value.damage_relations.no_damage_to.some(
-            (t) => t.name == versusType.value.name
-          ) &&
-          !currentType.value.damage_relations.half_damage_to.some(
-            (t) => t.name == versusType.value.name
-          ) &&
-          !currentType.value.damage_relations.double_damage_to.some(
-            (t) => t.name == versusType.value.name
-          ))
-      ) {
-        const elapsedTimes = getElapsedTime();
+      const elapsedTime = getElapsedTime();
+      const typeResponse = new TypeResponse();
+      typeResponse.currentType = currentType.value;
+      typeResponse.currentTypeImg = currentImg.value;
+      typeResponse.versusType = versusType.value;
+      typeResponse.versusTypeImg = versusImg.value;
+      typeResponse.goodResponse = getGoodResponse();
+      typeResponse.response = value;
+      typeResponse.elapsedTime = elapsedTime;
+      if(value === typeResponse.goodResponse){
         const timeMin = 2000;
         const timeMax = 5000;
-
-        if (elapsedTimes < timeMin) totalScore.value += 5;
-        else if (elapsedTimes < timeMax) {
-          totalScore.value = +(
-            totalScore.value +
-            5 -
-            (elapsedTimes - timeMin) / 1000
-          ).toFixed(2);
+        if (elapsedTime < timeMin){
+          typeResponse.score = 5;
+          totalScore.value += typeResponse.score;
+        } 
+        else if (elapsedTime < timeMax) {
+          typeResponse.score = +(5 - (elapsedTime - timeMin) / 1000).toFixed(2);
+          totalScore.value += typeResponse.score;
         }
         goodResponse.value++;
       } else {
         badResponse.value++;
       }
-
+      responses.value.push(typeResponse);
       resetTimer();
       if (badResponse.value + goodResponse.value === questionCount.value) {
         finish.value = true;
@@ -228,6 +244,19 @@ export default defineComponent({
         if (totalScore.value > bestScore.value)
           bestScore.value = totalScore.value;
       } else generateQuestion();
+    }
+
+    function getGoodResponse(): string {
+      if(currentType.value.damage_relations.no_damage_to.some(
+        (t) => t.name == versusType.value.name
+      )) return "0" ;
+      if(currentType.value.damage_relations.half_damage_to.some(
+        (t) => t.name == versusType.value.name
+      )) return "/2" ;
+      if(currentType.value.damage_relations.double_damage_to.some(
+        (t) => t.name == versusType.value.name
+      )) return "x2" ;
+      return "x1";
     }
 
     let timeBegan: Date | null = null;
@@ -292,6 +321,7 @@ export default defineComponent({
       running,
       finish,
       bestScore,
+      responses
     };
   },
 });
