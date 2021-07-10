@@ -140,7 +140,7 @@
         </v-list>
       </v-card> -->
     </v-row>
-    <v-row class="align-center" justify="center" v-if="finish">
+    <v-row class="align-center" justify="center" v-if="finish && responses.length">
       <v-card class="mx-auto" elevation="0" outlined>
         <v-list class="">
           <template v-for="(item, index) in responses">
@@ -217,7 +217,7 @@ export default defineComponent({
         }
 
         if (nbrOfSameResponse >= sameResponseMax) {
-          sameResponseMax = Math.floor(Math.random() * 5) + 2;
+          sameResponseMax = Math.floor(Math.random() * 4) + 2;
           console.log(`same response allow ${sameResponseMax}`);
           generateQuestion();
         } else {
