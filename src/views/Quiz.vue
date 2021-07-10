@@ -183,6 +183,8 @@ export default defineComponent({
     const finish = ref(true);
     const bestScore = ref(0);
     const responses = ref<TypeResponse[]>([]);
+    let nbrOfSameResponse = 0;
+    let sameResponseMax = 4;
 
     function startGame() {
       goodResponse.value = 0;
@@ -201,12 +203,30 @@ export default defineComponent({
         axios.get<PokemonTypeDTO>(`https://pokeapi.co/api/v2/type/${random1}`),
         axios.get<PokemonType>(`https://pokeapi.co/api/v2/type/${random2}`),
       ]).then((resp) => {
-        currentType.value = new PokemonType(resp[0].data);
-        currentImg.value = `/img/typeIcons/${resp[0].data.name}.png`;
-        versusType.value = new PokemonType(resp[1].data);
-        versusImg.value = `/img/typeIcons/${resp[1].data.name}.png`;
+        const nextType = new PokemonType(resp[0].data);
+        const nextVersusType = new PokemonType(resp[1].data);
+        if (currentType.value?.id) {
+          const response = getGoodResponse(nextType, nextVersusType);
+          const previousResponse = getGoodResponse(
+            currentType.value,
+            versusType.value
+          );
 
-        start();
+          if (response === previousResponse) nbrOfSameResponse++;
+          else nbrOfSameResponse = 0;
+        }
+
+        if (nbrOfSameResponse >= sameResponseMax) {
+          sameResponseMax = Math.floor(Math.random() * 5) + 2;
+          console.log(`same response allow ${sameResponseMax}`);
+          generateQuestion();
+        } else {
+          currentType.value = nextType;
+          currentImg.value = `/img/typeIcons/${resp[0].data.name}.png`;
+          versusType.value = nextVersusType;
+          versusImg.value = `/img/typeIcons/${resp[1].data.name}.png`;
+          start();
+        }
       });
     }
 
@@ -218,17 +238,19 @@ export default defineComponent({
       typeResponse.currentTypeImg = currentImg.value;
       typeResponse.versusType = versusType.value;
       typeResponse.versusTypeImg = versusImg.value;
-      typeResponse.goodResponse = getGoodResponse();
+      typeResponse.goodResponse = getGoodResponse(
+        typeResponse.currentType,
+        typeResponse.versusType
+      );
       typeResponse.response = value;
       typeResponse.elapsedTime = elapsedTime;
-      if(value === typeResponse.goodResponse){
+      if (value === typeResponse.goodResponse) {
         const timeMin = 2000;
         const timeMax = 5000;
-        if (elapsedTime < timeMin){
+        if (elapsedTime < timeMin) {
           typeResponse.score = 5;
           totalScore.value += typeResponse.score;
-        } 
-        else if (elapsedTime < timeMax) {
+        } else if (elapsedTime < timeMax) {
           typeResponse.score = +(5 - (elapsedTime - timeMin) / 1000).toFixed(2);
           totalScore.value += typeResponse.score;
         }
@@ -246,16 +268,19 @@ export default defineComponent({
       } else generateQuestion();
     }
 
-    function getGoodResponse(): string {
-      if(currentType.value.damage_relations.no_damage_to.some(
-        (t) => t.name == versusType.value.name
-      )) return "0" ;
-      if(currentType.value.damage_relations.half_damage_to.some(
-        (t) => t.name == versusType.value.name
-      )) return "/2" ;
-      if(currentType.value.damage_relations.double_damage_to.some(
-        (t) => t.name == versusType.value.name
-      )) return "x2" ;
+    function getGoodResponse(type: PokemonType, versus: PokemonType): string {
+      if (type.damage_relations.no_damage_to.some((t) => t.name == versus.name))
+        return "0";
+      if (
+        type.damage_relations.half_damage_to.some((t) => t.name == versus.name)
+      )
+        return "/2";
+      if (
+        type.damage_relations.double_damage_to.some(
+          (t) => t.name == versus.name
+        )
+      )
+        return "x2";
       return "x1";
     }
 

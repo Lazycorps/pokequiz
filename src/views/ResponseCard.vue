@@ -6,7 +6,7 @@
   >
     <v-card-text>
       <v-row class="align-center" justify="center">
-        <v-col class="d-flex justify-start align-center">
+        <v-col cols="5" class="d-flex justify-start align-center">
           <v-img
             :src="response.currentTypeImg"
             style="max-height: 50px; max-width: 50px"
@@ -17,13 +17,22 @@
             style="max-height: 50px; max-width: 50px"
           />
         </v-col>
-        <v-col cols="auto">
-          <div>Your response : {{ response.response }}</div>
-          <div>Good response : {{ response.goodResponse }}</div>
+        <v-col cols="4">
+          <div>Answer : <b>{{ response.goodResponse }}</b></div>
+          <div>Your Answer : <b>{{ response.response }}</b></div>
         </v-col>
-        <v-col cols="auto">
-          <div>Score : {{ response.score }}</div>
-          <div>Time: {{ response.elapsedTime / 1000 }}</div>
+        <v-col cols="3">
+          <div>
+            <span
+              ><v-icon class="mr-2" small>mdi-star-circle</v-icon>{{ response.score }}</span
+            >
+          </div>
+          <div>
+            <span
+              ><v-icon class="mr-2" small>mdi-timer</v-icon
+              >{{ (response.elapsedTime / 1000).toFixed(2)+'s' }}</span
+            >
+          </div>
         </v-col>
       </v-row>
     </v-card-text>
